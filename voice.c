@@ -24,7 +24,7 @@ const unsigned int x_reserve[15][9];
 #define size  350
 #define N  8
 #define DELAY 80
-#define DEVIDE 33
+#define DEVIDE 9
 char luxi[]="个条件收到";
 char luxj[]="无数据";
 //char luxh[]="新安村";
@@ -44,7 +44,7 @@ struct DoWith
 {
 	unsigned char howmany;
 	unsigned int  what;
-}DoWithS[8],factor[20];
+}DoWithS[20],factor[20];
 void send_char(unsigned char *testbuffer);
 unsigned char DoWithTiaoJian(unsigned int *rdat);
 BYTEBIT  Cdata1,Cdata2;
@@ -87,10 +87,7 @@ unsigned int rdata2[11]={115,117,119,121,123,125,127,129,131,133};
 volatile unsigned int rdata3[150]={0};
 unsigned int rdata4[DELAY];
 unsigned int Bcast[6];
-//int rdata4[9];
-//int rdata5[48];
-//volatile unsigned int factor[40]={/*0x3c2,0x4fa*/};//条件数目
-unsigned int factor1[40]={};
+
 
 void EEPROM_write(unsigned int uiAddress, unsigned char  ucData)
 {
@@ -159,7 +156,7 @@ void Delayms(unsigned int MS)
 //串口初始化
 void USART0_Init( void )
 {
-     UBRR0L=12;         //12m 76  8m 51 1m  12 4800   
+     UBRR0L=8;         //12m 76  8m 51 1m  12 4800   
 //	 UCSR0A =(1<<U2X0);         
      UCSR0B = (1<<RXEN0)|(1<<TXEN0); 
 	 UCSR0C =0x0e;// (1<<USBS0)|(3<<UCSZ0);
@@ -266,32 +263,7 @@ while(pthis!=NULL)
 	pthis=pthis->next;
 	count++;
 	}
-	//中间cut
-/*	for (a=1;a<15;a++)
-		for ( b=0;b<9;b++)
-				if (x_reserve[a][b]==Num&&x_reserve[a][b]!=0)
-					for (c=0;c<20;c++)
-						if (factor[c].what==a)
-						{if (factor[c].howmany==5)
-						factor[c].howmany=3;
-						else {factor[c].what=0;factor[c].howmany=0;}}*/
-/*	for(c=0;c<10;c++)
-	{
-		for(b=0;b<6;b++)//输入5条件
-		{
-		temp_len=Quest_len_int(factor);
-		for(a=0;a<temp_len;a++)//产生20条件
-			{
-			if(*(unsigned int *)(factor[a]+b+b)==Num)
-				for(;a<temp_len;a++)////////////////////////////////
-				{
-					factor[a]=factor[a+1];
-					factor1[a]=factor1[a+1];
-				}			
-			}	
-		}
-	}	*/
-	//322 321 330 312 4fa
+
 
 	for(c=DELAY-9;c<DELAY;c++)
 	{
@@ -383,7 +355,7 @@ void addto4_last(unsigned int Num)
 void Judge(void)//传入一个接收到的rxdata数组 这个数组依次和前一个比较结果存到类似   05 51  这样的结果中第五位为51
 {
 	int b=0,a=0;
-		for (b=0;b<80;b++)
+		for (b=0;b<150;b++)
 		rdata3[b]=0;
 		for (a=4;a<33;a++)
 		{
@@ -461,7 +433,13 @@ while(pthis!=NULL)
 		{
 			{b|=(rdata4[a]==pthis->con[1]);}
 		}
- 		n&=b;//rdata3 01 42  01  43         
+ 		n&=b;//rdata3 01 42  01  43    
+		 b=0;
+		 for(a=0;a<150;a++)//延迟80秒
+		{
+			{b|=(rdata3[a]==pthis->con[2]);}
+		}
+ 		n&=b;     
 		//头一个为不符合条件选项
 		if(pthis->con[0]!=255)
 		{
@@ -469,10 +447,6 @@ while(pthis!=NULL)
 			for(a=0;a<DELAY;a++)
 			{
 			{b|=(rdata4[a]==pthis->con[0]);}
-			}
-			for(a=0;a<DELAY;a++)
-			{
-			{b|=(rdata4[a]==pthis->con[2]);}
 			}
  		if(b==1)n=0;
 		}
@@ -512,8 +486,7 @@ while(pthis!=NULL)
 					uart_sendB(0xFF);
 					factor[count]=DoWithS[a];
 				}
-	//			addx(pthis->con,factor,Quest_len_int(factor));
-	//			addx(*pthis->sent,factor1,Quest_len_int(factor1));
+
 				}	
 			}						
 		}
@@ -524,80 +497,6 @@ while(pthis!=NULL)
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void searchL(void)
-{
-
-
-
-	volatile unsigned int a=0,b=0,c=0,d=1,count=0,temp;//f是条件后几个不发
-	if(1==m)return;
-	if(1==i){i=0;return;}
-
-	pthis=head;
-	if(head==NULL)
-	{
-	return;
-	}
-
-	temp=DoWithTiaoJian(rdata3);
-while(pthis!=NULL)
-	{
-	
-		if(DEVIDE<count)break;//前45个条件
-		n=1;
-		b=0;
-		for(a=0;a<DELAY;a++)//延迟80秒
-		{
-			{b|=(rdata4[a]==pthis->con[1]);}
-		}
- 		n&=b;//rdata3 01 42  01  43         
-		//头一个为不符合条件选项
-		if(pthis->con[0]!=255)
-		{
-		b=0;
-			for(a=0;a<DELAY;a++)
-			{
-			{b|=(rdata4[a]==pthis->con[0]);}
-			}
- 		if(b==1)n=0;
-		}
-
-		//////////////////////成功
-			if(n==1)
-			{
-
-				for (a=0;a<8;a++)
-				{
-					d=0;
-					if(factor[count].what)
-					if(DoWithS[count].howmany<=factor[count].howmany)
-				{d=1;}//轨道边
-
-					if(temp!=0)
-					for (c=0;c<20;c++)
-					if(DoWithS[a].what==factor[c].what)
-					if(DoWithS[a].howmany==factor[c].howmany||DoWithS[a].howmany<3)d=1;//轨道中
-					if(d==0)
-					{
-						temp=DoWithS[a].howmany;
-						uart_sendB(DoWithS[a].howmany);
-						uart_sendB(DoWithS[a].what);
-						uart_sendB(count+1);
-						uart_sendB(0xFF);
-						factor[count]=DoWithS[a];
-						//			addx(pthis->con,factor,Quest_len_int(factor));
-						//			addx(*pthis->sent,factor1,Quest_len_int(factor1));
-					}
-				}
-
-				
-				d=0;
-			}
-	pthis=pthis->next;
-	count++;
-	}
-}
-/////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -796,9 +695,9 @@ ISR(USART0_RX_vect)
 	 }	 
 }
 const unsigned int x_reserve[15][9]=
-{ {0,0,0,0,0},{987,1011,16,115,115,116,70,116,116},{917,1003,34,117,117,118,58,118,118},{909,951,26,119,119,120,82,120,120},{916,950,32,121,121,122,80,122,122},{925,953,26,123,123,124,82,124,124},
-												  {915,949,32,125,125,126,80,126,126},{926,952,28,127,127,128,84,128,128},{0,0,0,0,0},	  {0,0,0,0,0},{913,945,30,129,129,130,76,130,130},
-												  {0,0,0,0,0},	  {0,939,18,131,131,132,76,132,132},{0,0,0,0,0},{918,0,34,133,133,134,50,134,134}};
+{ {0,0,0,0,0},{987,1011,16,115,115,116,70,116,116},{917,1003,34,117,117,118,58,118,118},{909,951,26,119,119,120,82,120,120},{916,950,32,121,121,122,80,122,122},{911,953,26,123,123,124,82,124,124},
+												  {915,949,32,125,125,126,80,126,126},{912,952,28,127,127,128,84,128,128},{0,0,0,0,0},	  {0,0,0,0,0},{913,945,30,129,129,130,76,130,130},
+												  {0,0,0,0,0},	  {18,939,18,131,131,132,76,132,132},{0,0,0,0,0},{918,50,34,133,133,134,50,134,134}};
 
 													  
 //const unsigned int x_reserve[15][8]={ {0,0,0,0,0},{115,16,305,116,385,70,116,116},{117,34,313,118,393,58,118,118},{119,26,321,120,401,82,120,120},{121,32,329,122,409,80,122,122},{123,26,337,124,417,82,124,124},
@@ -954,31 +853,17 @@ int main(void)
 	LED_TWINKEL//init complete
 	}
 UCSR0B |=(1<<RXCIE0);
-/*	rdata3[56]=16;rdata3[32]=116;//接近
-	rdata3[21]=34;rdata3[55]=118;rdata3[31]=58;//通过
-	rdata3[5]=131;rdata3[6]=18;rdata3[7]=76;rdata3[8]=132;//全都有
-	rdata3[3]=26;rdata3[4]=119;//发车
-	rdata4[1]=100;
-	//temp=DoWithTiaoJian(rdata3);
-	factor[5].what=1;
-	m=0;
-	factor[0].howmany=4;
-	factor[0].what=2;
-	factor[1].howmany=4;
-	factor[1].what=3;
-	searchF();
-	cut(117);*/
+
      while(1)
  {
-	
+	/*if (factor[1].what!=2)
+	{
+		factor[1].what=2;
+	}*/
 	if (rdata[1]==0x11&&rx0x11==0)
 	{
 			Judge();
 			rx0x11=1;
-//			searchF();
-//			searchL();
-//			sendcast();
-			
 	}
 	if (rdata[1]==0x12&&rx0x12==0)
 	{
@@ -986,13 +871,9 @@ UCSR0B |=(1<<RXCIE0);
 	rx12();
 	rx0x12=1;
 	searchF();
-//	searchL();
 //	sendcast();
 	}
-	/*if (duplicate(rdata3)||duplicate(factor))
-	{
-		uart_sendB(0xee);
-	}*/
+	
 	
  }
 	 return 0;
