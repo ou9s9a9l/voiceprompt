@@ -19,11 +19,11 @@
 unsigned char *p;//flag
 unsigned char *j=((unsigned char *)0x000800);//Êý¾Ý´æ´¢Î»ÖÃ
 
-const unsigned int x_reserve[15][7];
+const unsigned int x_reserve[15][9];
 #define NOP() asm("nop")
 #define size  350
 #define N  8
-#define DELAY 50
+#define DELAY 80
 #define DEVIDE 33
 char luxi[]="¸öÌõ¼þÊÕµ½";
 char luxj[]="ÎÞÊý¾Ý";
@@ -82,9 +82,9 @@ unsigned int m_save,m_crc,m_count;
 volatile char rdata[size]={0};
 char rdata1[size]={1};
 char rdatatemp[size]={0};
-
+volatile unsigned int DoWithArray[80]={0};
 unsigned int rdata2[11]={115,117,119,121,123,125,127,129,131,133};
-volatile unsigned int rdata3[80]={0};
+volatile unsigned int rdata3[150]={0};
 unsigned int rdata4[DELAY];
 unsigned int Bcast[6];
 //int rdata4[9];
@@ -267,12 +267,14 @@ while(pthis!=NULL)
 	count++;
 	}
 	//ÖÐ¼äcut
-	for (a=1;a<15;a++)
-		for ( b=0;b<7;b++)
+/*	for (a=1;a<15;a++)
+		for ( b=0;b<9;b++)
 				if (x_reserve[a][b]==Num&&x_reserve[a][b]!=0)
 					for (c=0;c<20;c++)
 						if (factor[c].what==a)
-						{factor[c].what=0;factor[c].howmany=0;}
+						{if (factor[c].howmany==5)
+						factor[c].howmany=3;
+						else {factor[c].what=0;factor[c].howmany=0;}}*/
 /*	for(c=0;c<10;c++)
 	{
 		for(b=0;b<6;b++)//ÊäÈë5Ìõ¼þ
@@ -307,7 +309,7 @@ unsigned char find(unsigned int *rdat,unsigned int source)
 	temp=Quest_len_int(rdat);
 	if (rdat[DELAY-9]!=0&&0==temp)
 	temp=DELAY;
-	for (unsigned char a=0;a<temp;a++)
+	for (unsigned char a=0;a<=temp;a++)
 	{if(rdat[a]==source)return 1;}
 		
 	return 0;
@@ -387,6 +389,10 @@ void Judge(void)//´«ÈëÒ»¸ö½ÓÊÕµ½µÄrxdataÊý×é Õâ¸öÊý×éÒÀ´ÎºÍÇ°Ò»¸ö±È½Ï½á¹û´æµ½ÀàË
 		{
 		add(0,rdata[a],a);                             //´¦Àí³ÌÐò  
 		} 
+		for (a=110;a<132;a++)
+		{
+			add(0,rdata[a],a);                             //´¦Àí³ÌÐò
+		}
 
 	y++;
 }
@@ -400,8 +406,8 @@ b=Num;
 if (Bcast[5]==0)Bcast[5]=b;
 else if (Bcast[4]==0)Bcast[4]=b;
 else if	(Bcast[3]==0)Bcast[3]=b;
-else if	(Bcast[3]==0)Bcast[2]=b;
-else if	(Bcast[3]==0)Bcast[1]=b;
+else if	(Bcast[2]==0)Bcast[2]=b;
+else if	(Bcast[1]==0)Bcast[1]=b;
 /*else 
 {{for(b=0;b<5;b++)
 Bcast[b]=Bcast[b+1];}
@@ -430,7 +436,7 @@ void searchF(void)
 
 
 	
-	volatile unsigned int a=0,b=0,c=0,d=1,count=0,temp;//fÊÇÌõ¼þºó¼¸¸ö²»·¢
+	volatile unsigned int a=0,b=0,c=0,d=1,count=0,temp,tempa,tempc;//fÊÇÌõ¼þºó¼¸¸ö²»·¢
 //	if(1==m)return;
 //	if(1==i){i=0;return;}
 
@@ -439,7 +445,12 @@ void searchF(void)
 	{
 	return;
 	}
+	for (a=0;a<80;a++)
+	DoWithArray[a]=0;
+	for (a=0;a<8;a++)
+	{DoWithS[a].howmany=0;DoWithS[a].what=0;}
 	temp=DoWithTiaoJian(rdata4);
+	n=0;
 while(pthis!=NULL)
 	{
 	
@@ -459,6 +470,10 @@ while(pthis!=NULL)
 			{
 			{b|=(rdata4[a]==pthis->con[0]);}
 			}
+			for(a=0;a<DELAY;a++)
+			{
+			{b|=(rdata4[a]==pthis->con[2]);}
+			}
  		if(b==1)n=0;
 		}
 
@@ -470,25 +485,39 @@ while(pthis!=NULL)
 			{
 			d=0;
 			if(factor[count].what)
-				if(DoWithS[count].howmany<=factor[count].howmany)
 				{d=1;}//¹ìµÀ±ß
 
-			if(temp!=0)
+			if(DoWithS[a].what!=0)
 			for (c=0;c<20;c++)
 				if(DoWithS[a].what==factor[c].what)
 					if(DoWithS[a].howmany<=factor[c].howmany)d=1;//¹ìµÀÖÐ
-				if(d==0)
+				if(d==0&&DoWithS[a].howmany!=0)
  				{
-				temp=DoWithS[a].howmany;
-				factor[count]=DoWithS[a];
+				if (1==temp&&find(rdata3,x_reserve[DoWithS[a].what][0]))
+				{
+						
+						uart_sendB(DoWithS[a].howmany);
+						uart_sendB(DoWithS[a].what);
+						uart_sendB(count+1);
+						uart_sendB(temp);
+						uart_sendB(0xFF);
+						factor[count]=DoWithS[a];
+				}
+				if (0==temp&&find(rdata3,x_reserve[DoWithS[a].what][1]))
+				{
+					uart_sendB(DoWithS[a].howmany);
+					uart_sendB(DoWithS[a].what);
+					uart_sendB(count+1);
+					uart_sendB(temp);
+					uart_sendB(0xFF);
+					factor[count]=DoWithS[a];
+				}
 	//			addx(pthis->con,factor,Quest_len_int(factor));
-				addx(*pthis->sent,factor1,Quest_len_int(factor1));
+	//			addx(*pthis->sent,factor1,Quest_len_int(factor1));
 				}	
-			}			
-
-		
-		d=0;			
+			}						
 		}
+	
 	pthis=pthis->next;
 	count++;
 	}
@@ -534,33 +563,36 @@ while(pthis!=NULL)
 		}
 
 		//////////////////////³É¹¦
-		if(n==1)
-		{
-
-			for (a=0;a<8;a++)
+			if(n==1)
 			{
-			d=0;
-			if(factor[count].what)
-				if(DoWithS[a].howmany<=factor[c].howmany)
-				{d=1;}//¹ìµÀ±ß
-			temp=DoWithS[a].what;
-			if(temp!=0)
-			for (c=0;c<20;c++)
-				if(temp==factor[c].what)
-					if(DoWithS[a].howmany<=factor[c].howmany)d=1;//¹ìµÀÖÐ
-				
-			if (d==0)break;
-			}			
 
-			if(d==0)
- 			{
-			temp=DoWithS[a].howmany;
-			factor[count]=DoWithS[a];
-	//		addx(pthis->con,factor,Quest_len_int(factor));
-			addx(*pthis->sent,factor1,Quest_len_int(factor1));
+				for (a=0;a<8;a++)
+				{
+					d=0;
+					if(factor[count].what)
+					if(DoWithS[count].howmany<=factor[count].howmany)
+				{d=1;}//¹ìµÀ±ß
+
+					if(temp!=0)
+					for (c=0;c<20;c++)
+					if(DoWithS[a].what==factor[c].what)
+					if(DoWithS[a].howmany==factor[c].howmany||DoWithS[a].howmany<3)d=1;//¹ìµÀÖÐ
+					if(d==0)
+					{
+						temp=DoWithS[a].howmany;
+						uart_sendB(DoWithS[a].howmany);
+						uart_sendB(DoWithS[a].what);
+						uart_sendB(count+1);
+						uart_sendB(0xFF);
+						factor[count]=DoWithS[a];
+						//			addx(pthis->con,factor,Quest_len_int(factor));
+						//			addx(*pthis->sent,factor1,Quest_len_int(factor1));
+					}
+				}
+
+				
+				d=0;
 			}
-		d=0;			
-		}
 	pthis=pthis->next;
 	count++;
 	}
@@ -763,21 +795,29 @@ ISR(USART0_RX_vect)
 	 //±æ±ðÖÕÖ¹Î»
 	 }	 
 }
-const unsigned int x_reserve[15][7]={ {0,0,0,0,0},{115,115,16,116,70,116,116},{117,117,34,118,58,118,118},{119,119,26,120,82,120,120},{121,121,32,122,80,122,122},{123,123,26,124,82,124,124},
-												  {125,125,32,126,80,126,126},{127,127,28,128,84,128,128},{0,0,0,0,0},	  {0,0,0,0,0},	  {129,129,30,130,76,130,130},
-												  {0,0,0,0,0},	  {131,131,18,132,76,132,132},{0,0,0,0,0},	  {133,133,34,134,50,134,134}};
+const unsigned int x_reserve[15][9]=
+{ {0,0,0,0,0},{987,1011,16,115,115,116,70,116,116},{917,1003,34,117,117,118,58,118,118},{909,951,26,119,119,120,82,120,120},{916,950,32,121,121,122,80,122,122},{925,953,26,123,123,124,82,124,124},
+												  {915,949,32,125,125,126,80,126,126},{926,952,28,127,127,128,84,128,128},{0,0,0,0,0},	  {0,0,0,0,0},{913,945,30,129,129,130,76,130,130},
+												  {0,0,0,0,0},	  {0,939,18,131,131,132,76,132,132},{0,0,0,0,0},{918,0,34,133,133,134,50,134,134}};
 
 													  
-volatile unsigned int DoWithArray[80]={0};
+//const unsigned int x_reserve[15][8]={ {0,0,0,0,0},{115,16,305,116,385,70,116,116},{117,34,313,118,393,58,118,118},{119,26,321,120,401,82,120,120},{121,32,329,122,409,80,122,122},{123,26,337,124,417,82,124,124},
+//												  {125,32,345,126,425,80,126,126},{127,28,353,128,433,84,128,128},{0,0,0,0,0},	  {0,0,0,0,0},	  {129,30,361,130,441,76,130,130},
+//												  {0,0,0,0,0},	  {131,18,369,132,449,76,132,132},{0,0,0,0,0},	  {133,34,377,134,457,50,134}};
 
-unsigned char DoWithTiaoJian(unsigned int *rdat)
+
+unsigned char DoWithTiaoJian(unsigned int *rdat)//×ó1ÓÒ0
 {
 	volatile unsigned char a,b,c=0,DoWithCount=1,DoWithvalue=0,revalue=0;
 	for (a=1;a<15;a++)
-		for ( b=0;b<7;b++)
+		for ( b=0;b<9;b++)
 			for (c=0;c<80;c++)
 				if (x_reserve[a][b]==rdat[c]&&x_reserve[a][b]!=0)
-				{DoWithArray[DoWithCount++]=x_reserve[a][b];DoWithArray[DoWithCount++]=a;}
+					{
+					DoWithArray[DoWithCount++]=x_reserve[a][b];
+					DoWithArray[DoWithCount++]=a;
+					if (b==2)revalue=1;
+					}
 	
 	if (DoWithCount>1)
 	{
@@ -787,18 +827,17 @@ unsigned char DoWithTiaoJian(unsigned int *rdat)
 			{DoWithS[DoWithvalue].howmany=6;DoWithS[DoWithvalue].what=DoWithArray[a*2];DoWithvalue++;}
 			else if (DoWithArray[a*2]==DoWithArray[a*2+2]&&DoWithArray[a*2]==DoWithArray[a*2+4]&&DoWithArray[a*2]==DoWithArray[a*2+6]&&DoWithArray[a*2]==DoWithArray[a*2+8]
 			&&DoWithS[DoWithvalue-1].what!=DoWithArray[a*2]&&DoWithArray[a*2]!=0)
-			{DoWithS[DoWithvalue].howmany=5;DoWithS[DoWithvalue].what=DoWithArray[a*2];DoWithvalue++;revalue=1;}
+			{DoWithS[DoWithvalue].howmany=5;DoWithS[DoWithvalue].what=DoWithArray[a*2];DoWithvalue++;}
 			else if (DoWithArray[a*2]==DoWithArray[a*2+2]&&DoWithArray[a*2]==DoWithArray[a*2+4]&&DoWithArray[a*2]==DoWithArray[a*2+6]
 			&&DoWithS[DoWithvalue-1].what!=DoWithArray[a*2]&&DoWithArray[a*2]!=0)
-			{DoWithS[DoWithvalue].howmany=4;DoWithS[DoWithvalue].what=DoWithArray[a*2];DoWithvalue++;revalue=1;}
+			{DoWithS[DoWithvalue].howmany=4;DoWithS[DoWithvalue].what=DoWithArray[a*2];DoWithvalue++;}
 			else if(DoWithArray[a*2]==DoWithArray[a*2+2]&&DoWithArray[a*2]==DoWithArray[a*2+4]
 			&&DoWithS[DoWithvalue-1].what!=DoWithArray[a*2]&&DoWithArray[a*2]!=0)
 			{
 				DoWithS[DoWithvalue].what=DoWithArray[a*2];
 				DoWithS[DoWithvalue].howmany=3;
 				DoWithvalue++;
-				revalue=1;}
-			else if(8==DoWithvalue)return revalue;
+				}
 			return revalue;
 	}
 }
@@ -816,7 +855,8 @@ int DupliDoWith(int x,int y)
 //    asm("sleep");
 //const unsigned int x_reserve[15][7]={ {0,0,0,0,0},{115,115,16,116,70,116,116},{117,117,34,118,58,118,118},{119,119,26,120,82,120,120},{121,121,32,122,80,122,122},{123,123,26,124,82,124,124},
 //												  {125,125,32,126,80,126,126},{127,127,28,128,84,128,128},{0,0,0,0,0},	  {0,0,0,0,0},	  {129,129,30,130,76,130,130},
-//											   	  {0,0,0,0,0},	  {131,131,18,132,76,132,132},{0,0,0,0,0},	  {133,133,34,134,50,134,134}};
+//		
+//									   	  {0,0,0,0,0},	  {131,131,18,132,76,132,132},{0,0,0,0,0},	  {133,133,34,134,50,134,134}};
 void rx12(void)
 {
 	volatile unsigned int a,b=0,c=0,tempNum;
@@ -825,7 +865,7 @@ void rx12(void)
 		c=0;
 		tempNum=rdata[a*2+6];
 		tempNum|=rdata[a*2+7]<<8;
-		if ((tempNum&0x0fff)<232)
+		if ((tempNum&0x0fff)<240)
 		{
 			if (tempNum&0x8000)
 			{for (b=0;b<80;b++)
@@ -836,14 +876,31 @@ void rx12(void)
 				if (c==0)
 				{
 					hei[0]=(tempNum&0x0fff)+1;
-					rdata3[Quest_len_int(rdata3)]=(tempNum&0x0fff)+1;m=1;
+					rdata3[Quest_len_int(rdata3)]=(tempNum&0x0fff)+1;
 					if((((tempNum&0x0fff)+1)%2)==0)addto4((tempNum&0x0fff)+1);
 					else if(find(rdata2,(tempNum&0x0fff)+1))addto4_last((tempNum&0x0fff)+1);
-				}}
+					else if(((tempNum&0x0fff)+1)>230)addto4((tempNum&0x0fff)+1);
+				}
+			}
 				else
 				cut((tempNum&0x0fff)+1);                          //´¦Àí³ÌÐò
 			}
+		else if((tempNum&0x0fff)>888&&(tempNum&0x0fff)<1020)
+				if (tempNum&0x8000)
+				{for (b=0;b<80;b++)
+				{
+				if(((tempNum&0x0fff)+1)==rdata3[b])
+				c=1;
+				}
+				if (c==0)
+				{
+					hei[0]=(tempNum&0x0fff)+1;
+					rdata3[Quest_len_int(rdata3)]=(tempNum&0x0fff)+1;
+				}
 		}
+		else
+		cut((tempNum&0x0fff)+1);
+	}
 }		
 int main(void)
 { 
@@ -896,9 +953,6 @@ int main(void)
 	input_rom();
 	LED_TWINKEL//init complete
 	}
-
-//EEPROM_write(16,0x3e);
-//EEPROM_write(17,1);
 UCSR0B |=(1<<RXCIE0);
 /*	rdata3[56]=16;rdata3[32]=116;//½Ó½ü
 	rdata3[21]=34;rdata3[55]=118;rdata3[31]=58;//Í¨¹ý
@@ -933,7 +987,7 @@ UCSR0B |=(1<<RXCIE0);
 	rx0x12=1;
 	searchF();
 //	searchL();
-	sendcast();
+//	sendcast();
 	}
 	/*if (duplicate(rdata3)||duplicate(factor))
 	{
