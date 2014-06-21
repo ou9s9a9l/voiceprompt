@@ -357,6 +357,10 @@ void Judge(void)//´«ÈëÒ»¸ö½ÓÊÕµ½µÄrxdataÊı×é Õâ¸öÊı×éÒÀ´ÎºÍÇ°Ò»¸ö±È½Ï½á¹û´æµ½ÀàË
 	int b=0,a=0;
 		for (b=0;b<150;b++)
 		rdata3[b]=0;
+		for (b=DELAY-9;b<DELAY;b++)
+		{
+			rdata4[b]=0;
+		}
 		for (a=4;a<33;a++)
 		{
 		add(0,rdata[a],a);                             //´¦Àí³ÌĞò  
@@ -643,9 +647,12 @@ ISR(USART0_RX_vect)
 	if(temp==0x01)succflag=1;
 	if(1==count&&(temp==0x14||temp==0x15))
 	 {
-		 addto4(0);succflag=0;count=0;return;
+		 if (temp==0x14)
+		 addto4(0);
+		 succflag=0;count=0;return;
 	 }
-	
+	 
+		
 	if(succflag)
 	{
 	 rdatatemp[count]=temp;
@@ -777,8 +784,9 @@ void rx12(void)
 					hei[0]=(tempNum&0x0fff)+1;
 					rdata3[Quest_len_int(rdata3)]=(tempNum&0x0fff)+1;
 					if((((tempNum&0x0fff)+1)%2)==0)addto4((tempNum&0x0fff)+1);
-					else if(find(rdata2,(tempNum&0x0fff)+1))addto4_last((tempNum&0x0fff)+1);
-					else if(((tempNum&0x0fff)+1)>230)addto4((tempNum&0x0fff)+1);
+					else if(find(rdata2,(tempNum&0x0fff)+1))
+						addto4_last((tempNum&0x0fff)+1);//²»¿ÉÄÜÔÚÒ»·ÖÖÓÄÚÕâ¸öÏûÊ§µÄ£¬ËùÒÔ²»ÓÃÅĞ¶ÏÊÇ·ñÔÚrdata4ÓĞ
+				//	else if(((tempNum&0x0fff)+1)>230)addto4((tempNum&0x0fff)+1);
 				}
 			}
 				else
