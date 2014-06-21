@@ -23,7 +23,7 @@ const unsigned int x_reserve[15][9];
 #define NOP() asm("nop")
 #define size  350
 #define N  8
-#define DELAY 80
+#define DELAY 50
 #define DEVIDE 9
 char luxi[]="个条件收到";
 char luxj[]="无数据";
@@ -76,7 +76,7 @@ BYTEBIT  Cdata1,Cdata2;
 #define LED_ON  _PA3=0;
 #define LED_TWINKEL {LED_ON;_delay_ms(200);LED_OFF}
 int hei[3];
-int k=0,n,m=0,x=0,y=0,z=0,i=0,h=0; 					////k是rdata3里面的条件数//x代表rdata123的第几个 //n代表与条件 如果是1则成立h为已经成立条件数
+int k=0,m=0,x=0,y=0,z=0,i=0,h=0; 					////k是rdata3里面的条件数//x代表rdata123的第几个 //n代表与条件 如果是1则成立h为已经成立条件数
 volatile unsigned int delay=0,rx0x12=0,rx0x11=0;
 unsigned int m_save,m_crc,m_count;
 volatile char rdata[size]={0};
@@ -263,12 +263,14 @@ while(pthis!=NULL)
 	pthis=pthis->next;
 	count++;
 	}
-
+	for(c=0;c<DELAY-10;c++)
+	{
+	if(Num==rdata4[c])
+		rdata4[c]=0;
+	}
 
 	for(c=DELAY-9;c<DELAY;c++)
 	{
-	hei[1]=Num;
-	hei[2]=rdata4[c];
 	if(Num==rdata4[c])
 		for(;c<DELAY-1;c++)////////////////////////////////
 		rdata4[c]=rdata4[c+1];
@@ -412,7 +414,7 @@ void searchF(void)
 
 
 	
-	volatile unsigned int a=0,b=0,c=0,d=1,count=0,temp,tempa,tempc;//f是条件后几个不发
+	volatile unsigned int a=0,b=0,c=0,d=1,n=0,count=0,temp,tempa=0,tempb=0,tempc=0;//f是条件后几个不发
 //	if(1==m)return;
 //	if(1==i){i=0;return;}
 
@@ -426,7 +428,6 @@ void searchF(void)
 	for (a=0;a<8;a++)
 	{DoWithS[a].howmany=0;DoWithS[a].what=0;}
 	temp=DoWithTiaoJian(rdata4);
-	n=0;
 while(pthis!=NULL)
 	{
 	
@@ -458,13 +459,17 @@ while(pthis!=NULL)
 		//////////////////////成功
 		if(n==1)
 		{
-
+		
 			for (a=0;a<8;a++)
 			{
 			d=0;
 			if(factor[count].what)
 				{d=1;}//轨道边
-
+			if (tempb>0&&0==d)
+			{
+				factor[count].howmany=tempb;
+				factor[count].what=tempc;
+			}
 			if(DoWithS[a].what!=0)
 			for (c=0;c<20;c++)
 				if(DoWithS[a].what==factor[c].what)
@@ -473,7 +478,9 @@ while(pthis!=NULL)
  				{
 				if (1==temp&&find(rdata3,x_reserve[DoWithS[a].what][0]))
 				{
-						
+						tempa=1;//把所有都放进去的标识
+						tempb=DoWithS[a].howmany;
+						tempc=DoWithS[a].what;
 						uart_sendB(DoWithS[a].howmany);
 						uart_sendB(DoWithS[a].what);
 						uart_sendB(count+1);
@@ -483,6 +490,9 @@ while(pthis!=NULL)
 				}
 				if (0==temp&&find(rdata3,x_reserve[DoWithS[a].what][1]))
 				{
+					tempa=1;//把所有都放进去的标识
+						tempb=DoWithS[a].howmany;
+						tempc=DoWithS[a].what;
 					uart_sendB(DoWithS[a].howmany);
 					uart_sendB(DoWithS[a].what);
 					uart_sendB(count+1);
@@ -647,8 +657,6 @@ ISR(USART0_RX_vect)
 	if(temp==0x01)succflag=1;
 	if(1==count&&(temp==0x14||temp==0x15))
 	 {
-		 if (temp==0x14)
-		 addto4(0);
 		 succflag=0;count=0;return;
 	 }
 	 
