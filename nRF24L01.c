@@ -606,14 +606,14 @@ void L01_Init( void )
 	a=L01_ReadSingleReg(L01REG_RF_SETUP);
 	irq=0;
 }
-unsigned char send_int(int tx_couter)
+unsigned char send_int(unsigned char Num1,unsigned char Num2,unsigned char Num3)
 {
-	uart_sendB(tx_couter);
-/*unsigned char testbuffer[6]={"123"};
+	
+unsigned char testbuffer[6]={"123"};
 unsigned int itmp;
 volatile unsigned char tmp=0;
 
-            itmp = tx_couter;
+      /*      itmp = tx_couter;
             testbuffer[0] = ( itmp / 10000 ) + '0'-16;
             itmp %= 10000;
             testbuffer[1] = ( itmp / 1000 ) + '0'-16;
@@ -623,7 +623,10 @@ volatile unsigned char tmp=0;
             testbuffer[3] = ( itmp / 10 ) + '0'-16;
             itmp %= 10;
             testbuffer[4] = itmp + '0'-16;
-            testbuffer[5] = 0;
+            testbuffer[5] = 0;*/
+	  testbuffer[0]=Num1 ;
+	  testbuffer[1]=Num2 ;
+	  testbuffer[2]=Num3 ;
 		L01_FlushRX( );
         L01_FlushTX( );
         L01_WriteTXPayload_Ack(testbuffer,5);//(INT8U*)"len", strlen( "len" )
@@ -653,7 +656,7 @@ volatile unsigned char tmp=0;
 		
         L01_CE_LOW( );	// 发射完毕，CE = 0，省电
 	L01_ClearIRQ(112);
-	  L01_CE_LOW( );	// 发射完毕，CE = 0，省电*/
+	  L01_CE_LOW( );	// 发射完毕，CE = 0，省电
 
 }
 

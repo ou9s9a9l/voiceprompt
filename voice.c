@@ -14,12 +14,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <AVR/sleep.h>
+#include "nRF24L01.h"
+//#include "nRF24L01_Reg.h"
 #include "macr.h"
 //#include "nRF24L01.h"
 unsigned char *p;//flag
 unsigned char *j=((unsigned char *)0x000800);//Êı¾İ´æ´¢Î»ÖÃ
-
-const unsigned int x_reserve[15][9];
+#define  LENGTH 11
+const unsigned int x_reserve[15][LENGTH];
 #define NOP() asm("nop")
 #define size  350
 #define N  8
@@ -76,7 +78,8 @@ BYTEBIT  Cdata1,Cdata2;
 #define LED_ON  _PA3=0;
 #define LED_TWINKEL {LED_ON;_delay_ms(200);LED_OFF}
 int hei[3];
-int k=0,m=0,x=0,y=0,z=0,i=0,h=0; 					////kÊÇrdata3ÀïÃæµÄÌõ¼şÊı//x´ú±írdata123µÄµÚ¼¸¸ö //n´ú±íÓëÌõ¼ş Èç¹ûÊÇ1Ôò³ÉÁ¢hÎªÒÑ¾­³ÉÁ¢Ìõ¼şÊı
+int k=0,m=0,x=0,y=0,z=0,i=0,h=0; 
+unsigned int m_freedelay=0;					////kÊÇrdata3ÀïÃæµÄÌõ¼şÊı//x´ú±írdata123µÄµÚ¼¸¸ö //n´ú±íÓëÌõ¼ş Èç¹ûÊÇ1Ôò³ÉÁ¢hÎªÒÑ¾­³ÉÁ¢Ìõ¼şÊı
 volatile unsigned int delay=0,rx0x12=0,rx0x11=0;
 unsigned int m_save,m_crc,m_count;
 volatile char rdata[size]={0};
@@ -86,8 +89,8 @@ volatile unsigned int DoWithArray[80]={0};
 unsigned int rdata2[11]={115,117,119,121,123,125,127,129,131,133};
 volatile unsigned int rdata3[150]={0};
 unsigned int rdata4[DELAY];
-unsigned int Bcast[6];
-
+unsigned char Bcast[6][3];
+void searchL(void);
 
 void EEPROM_write(unsigned int uiAddress, unsigned char  ucData)
 {
@@ -281,8 +284,8 @@ unsigned char find(unsigned int *rdat,unsigned int source)
 {
 	unsigned char b=0,temp;
 	temp=Quest_len_int(rdat);
-	if (rdat[DELAY-9]!=0&&0==temp)
-	temp=DELAY;
+	if (rdat[41]!=0&&0==temp)
+	temp=49;
 	for (unsigned char a=0;a<=temp;a++)
 	{if(rdat[a]==source)return 1;}
 		
@@ -377,21 +380,7 @@ void Judge(void)//´«ÈëÒ»¸ö½ÓÊÕµ½µÄrxdataÊı×é Õâ¸öÊı×éÒÀ´ÎºÍÇ°Ò»¸ö±È½Ï½á¹û´æµ½ÀàË
 
 
 ////////////////////////////////////////////////////////////////////
-void add2Bcast(unsigned char Num)
-{
-volatile unsigned char b;
-b=Num;
-if (Bcast[5]==0)Bcast[5]=b;
-else if (Bcast[4]==0)Bcast[4]=b;
-else if	(Bcast[3]==0)Bcast[3]=b;
-else if	(Bcast[2]==0)Bcast[2]=b;
-else if	(Bcast[1]==0)Bcast[1]=b;
-/*else 
-{{for(b=0;b<5;b++)
-Bcast[b]=Bcast[b+1];}
-Bcast[5]=Num;}*/
 
-}
 
 
 void addx(unsigned int q,unsigned int *t,unsigned char r)
@@ -414,7 +403,7 @@ void searchF(void)
 
 
 	
-	volatile unsigned int a=0,b=0,c=0,d=1,n=0,count=0,temp,tempa=0,tempb=0,tempc=0;//fÊÇÌõ¼şºó¼¸¸ö²»·¢
+	volatile unsigned int a=0,b=0,c=0,d=1,e,n=0,count=0,temp,tempa=0,tempb=0,tempc=0;//fÊÇÌõ¼şºó¼¸¸ö²»·¢
 //	if(1==m)return;
 //	if(1==i){i=0;return;}
 
@@ -427,16 +416,16 @@ void searchF(void)
 	DoWithArray[a]=0;
 	for (a=0;a<8;a++)
 	{DoWithS[a].howmany=0;DoWithS[a].what=0;}
-	temp=DoWithTiaoJian(rdata4);
+	DoWithTiaoJian(rdata3);
 while(pthis!=NULL)
 	{
 	
 		if(DEVIDE<count)break;//Ç°45¸öÌõ¼ş
 		n=1;
 		b=0;
-		for(a=0;a<DELAY;a++)//ÑÓ³Ù80Ãë
+		for(a=0;a<150;a++)//ÑÓ³Ù80Ãë
 		{
-			{b|=(rdata4[a]==pthis->con[1]);}
+			{b|=(rdata3[a]==pthis->con[1]);}
 		}
  		n&=b;//rdata3 01 42  01  43    
 		 b=0;
@@ -451,12 +440,12 @@ while(pthis!=NULL)
 		b=0;
 			for(a=0;a<DELAY;a++)
 			{
-			{b|=(rdata4[a]==pthis->con[0]);}
+			{b|=(rdata3[a]==pthis->con[0]);}
 			}
  		if(b==1)n=0;
 		}
 
-		//////////////////////³É¹¦
+		//////////////////////³É¹¦//1½øÀ´factor1=0Í¨¹ı
 		if(n==1)
 		{
 		
@@ -476,35 +465,90 @@ while(pthis!=NULL)
 					if(DoWithS[a].howmany<=factor[c].howmany)d=1;//¹ìµÀÖĞ
 				if(d==0&&DoWithS[a].howmany!=0)
  				{
-				if (1==temp&&find(rdata3,x_reserve[DoWithS[a].what][0]))
+				if (count==0||count==6)temp=0;
+				else temp=1;
+				if (1==temp&&DoWithS[a].howmany!=6&&find(rdata3,x_reserve[DoWithS[a].what][0])&&find(rdata3,x_reserve[DoWithS[a].what][2]))
 				{
-						tempa=1;//°ÑËùÓĞ¶¼·Å½øÈ¥µÄ±êÊ¶
+					
 						tempb=DoWithS[a].howmany;
 						tempc=DoWithS[a].what;
 						uart_sendB(DoWithS[a].howmany);
 						uart_sendB(DoWithS[a].what);
 						uart_sendB(count+1);
 						uart_sendB(temp);
+						
+						if (DoWithS[a].howmany==3||DoWithS[a].howmany==7)
+						tempa+=0;
+						else if(DoWithS[a].howmany==4)
+						tempa+=10;
+						else if(DoWithS[a].howmany==5)
+						tempa+=20;
+						if (DoWithS[a].what<8)
+						{
+							tempa+=DoWithS[a].what;
+						} 
+						else if(DoWithS[a].what==10)
+						tempa+=8;
+						else if(DoWithS[a].what==12)
+						tempa+=9;
+						else if(DoWithS[a].what==14)
+						tempa+=10;
+						tempa+=50;
+						add2Bcast(tempa,0,122);
+						uart_sendB(tempa);
 						uart_sendB(0xFF);
 						factor[count]=DoWithS[a];
+							for (e=0;e<15;e++)
+							{
+								if(factor[e].what==factor[count].what)
+								factor[e].howmany=factor[count].howmany;
+							}
 				}
-				if (0==temp&&find(rdata3,x_reserve[DoWithS[a].what][1]))
+				if (0==temp&&DoWithS[a].howmany!=6&&find(rdata3,x_reserve[DoWithS[a].what][1])&&find(rdata3,x_reserve[DoWithS[a].what][3]))
 				{
-					tempa=1;//°ÑËùÓĞ¶¼·Å½øÈ¥µÄ±êÊ¶
+					
 						tempb=DoWithS[a].howmany;
 						tempc=DoWithS[a].what;
 					uart_sendB(DoWithS[a].howmany);
 					uart_sendB(DoWithS[a].what);
 					uart_sendB(count+1);
 					uart_sendB(temp);
-					uart_sendB(0xFF);
+						if (DoWithS[a].howmany==3||DoWithS[a].howmany==7)
+						tempa+=0;
+						else if(DoWithS[a].howmany==4)
+						tempa+=10;
+						else if(DoWithS[a].howmany==5)
+						tempa+=20;
+						if (DoWithS[a].what<8)
+						{
+							tempa+=DoWithS[a].what;
+						}
+						else if(DoWithS[a].what==10)
+						tempa+=8;
+						else if(DoWithS[a].what==12)
+						tempa+=9;
+						else if(DoWithS[a].what==14)
+						tempa+=10;
+						tempa+=50;
+						add2Bcast(tempa,0,122);
+						uart_sendB(tempa);
+						uart_sendB(0xFF);
 					factor[count]=DoWithS[a];
+					for (e=0;e<15;e++)
+					{
+						if(factor[e].what==factor[count].what)
+						factor[e].howmany=factor[count].howmany;
+					}
 				}
 
 				}	
 			}						
 		}
-	
+	if (factor[count].howmany==6)
+	{
+		factor[count].howmany=0;
+		factor[count].what=0;
+	}
 	pthis=pthis->next;
 	count++;
 	}
@@ -513,21 +557,6 @@ while(pthis!=NULL)
 
 
 
-
-void send_char(unsigned char *testbuffer)
-{
-
-		L01_FlushRX( );
-        L01_FlushTX( );
-        L01_WriteTXPayload_Ack(testbuffer,5);//(INT8U*)"len", strlen( "len" )*/
-        L01_CE_HIGH( );	// CE = 1,Æô¶¯·¢Éä
-
-		Delayms(100);
-
-        L01_CE_LOW( );	// ·¢ÉäÍê±Ï£¬CE = 0£¬Ê¡µç
-	L01_ClearIRQ(112);
-	  L01_CE_LOW( );	// ·¢ÉäÍê±Ï£¬CE = 0£¬Ê¡µç
-}
 
 
 ////////////////////////////////////////////////////////////////////	
@@ -592,45 +621,57 @@ pthis->next=NULL;
 //uart_sendB(sum);
 //str_send(luxi);
 }
-unsigned int m_freedelay=0;
+void qingling(unsigned char *rdat,unsigned char length)
+{
+	unsigned int a;
+	for(a=0;a<length;a++)
+	rdat[a]=0;
+}
 //////////////////////////////////
+void add2Bcast(unsigned char Num1,unsigned char Num2,unsigned char Num3)
+{
+if (Bcast[5][0]==0){Bcast[5][0]=Num1;Bcast[5][1]=Num2;Bcast[5][2]=Num3;}
+else if (Bcast[4][0]==0){Bcast[4][0]=Num1;Bcast[4][1]=Num2;Bcast[4][2]=Num3;}
+else if	(Bcast[3][0]==0){Bcast[3][0]=Num1;Bcast[3][1]=Num2;Bcast[3][2]=Num3;}
+else if	(Bcast[2][0]==0){Bcast[2][0]=Num1;Bcast[2][1]=Num2;Bcast[2][2]=Num3;}
+else if	(Bcast[1][0]==0){Bcast[1][0]=Num1;Bcast[1][1]=Num2;Bcast[1][2]=Num3;}
+/*else 
+{{for(b=0;b<5;b++)
+Bcast[b]=Bcast[b+1];}
+Bcast[5]=Num;}*/
+
+}
 void sendcast(void)
 {
-	if(Bcast[0]!=0)Bcast[0]=0;
-	if(m_count!=0){m_count--;return;}
-		if (m_freedelay==100)
+	if(Bcast[0][0]!=0)qingling(Bcast[0],3);
+	m_count++;m_freedelay++;
+	if(m_count<7)return;
+	if (m_freedelay>200)
 		{
-			send_int(199);
+			add2Bcast(0,0,122);//Õı¶¨ 3·ÖÖÓÒ»´Î
 			m_freedelay=0;
 		}
-	else m_freedelay++;
 	volatile unsigned char b=0;
-	if(Bcast[5]!=0)
+	if(Bcast[5][0]!=0)
 	{
 	m_freedelay=0;
 	LED_ON
-	if(Bcast[5]==221)
-	b=send_int(62);
-	else if(Bcast[5]==222)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
-	b=send_int(124);
-	else
-	b=send_int(Bcast[5]);
+	b=send_int(Bcast[5][0],Bcast[5][1],Bcast[5][2]);
 	if(b)
 	for(b=5;b!=0;b--)
-	Bcast[b]=Bcast[b-1];
-	m_count=4;
+	{
+		Bcast[b][0]=Bcast[b-1][0];
+		Bcast[b][1]=Bcast[b-1][1];
+		Bcast[b][2]=Bcast[b-1][2];
+	}		
+	m_count=0;
 	_delay_ms(100);
 	LED_OFF
 	}
 
 }
-////////////////////////////////////////////////////////////////
-#define TEST   2
-//////////////////////////////////////////
-//                                      //
-//                main                  //
-//                                      //
-//////////////////////////////////////////
+
+
 void Timer_Init(void)
 {
 	cli();
@@ -655,12 +696,15 @@ ISR(USART0_RX_vect)
 	if(UCSR0A & (1<<RXC0))
 	temp=UDR0;
 	if(temp==0x01)succflag=1;
+	if(1==count&&temp==0x14)
+	{sendcast();}
 	if(1==count&&(temp==0x14||temp==0x15))
 	 {
 		 succflag=0;count=0;return;
 	 }
-	 
-		
+	 if(1==count&&(temp==0x11||temp==0x12))
+	 LED_ON
+
 	if(succflag)
 	{
 	 rdatatemp[count]=temp;
@@ -689,6 +733,7 @@ ISR(USART0_RX_vect)
 			  rdatatemp[a]=0;
 	 count=-1;
 	 succflag=0;
+	 LED_OFF
 	  if(rdata[1]==0x12)
 	 rx0x12=0;
 	  if(rdata[1]==0x11)
@@ -709,34 +754,54 @@ ISR(USART0_RX_vect)
 	 //±æ±ğÖÕÖ¹Î»
 	 }	 
 }
-const unsigned int x_reserve[15][9]=
-{ {0,0,0,0,0},{987,1011,16,115,115,116,70,116,116},{917,1003,34,117,117,118,58,118,118},{909,951,26,119,119,120,82,120,120},{916,950,32,121,121,122,80,122,122},{911,953,26,123,123,124,82,124,124},
-												  {915,949,32,125,125,126,80,126,126},{912,952,28,127,127,128,84,128,128},{0,0,0,0,0},	  {0,0,0,0,0},{913,945,30,129,129,130,76,130,130},
-												  {0,0,0,0,0},	  {18,939,18,131,131,132,76,132,132},{0,0,0,0,0},{918,50,34,133,133,134,50,134,134}};
+
+const unsigned int x_reserve[15][LENGTH]=
+{ {0,0,0,0,0},	{987,1011,0,0,16,115,115,116,70,116,116},//1
+				{917,1003,0,0,34,117,117,118,58,118,118},//2
+				{909,951,988,1012,26,119,119,120,82,120,120},//3
+				{916,950,0,0,32,121,121,122,80,122,122},//4
+				{911,953,910,952,26,123,123,124,82,124,124},//5
+				{915,949,914,946,32,125,125,126,80,126,126},//6
+				{912,952,0,0,28,127,127,128,84,128,128},//7
+				{0,0,0,0,0},	  
+				{0,0,0,0,0},
+				{913,945,904,940,30,129,129,130,76,130,130},//10
+				{0,0,0,0,0},	
+				{18,939,0,0,18,131,131,132,76,132,132},//12
+				{0,0,0,0,0},
+				{918,50,0,0,34,133,133,134,50,134,134}};//14
 
 													  
-//const unsigned int x_reserve[15][8]={ {0,0,0,0,0},{115,16,305,116,385,70,116,116},{117,34,313,118,393,58,118,118},{119,26,321,120,401,82,120,120},{121,32,329,122,409,80,122,122},{123,26,337,124,417,82,124,124},
-//												  {125,32,345,126,425,80,126,126},{127,28,353,128,433,84,128,128},{0,0,0,0,0},	  {0,0,0,0,0},	  {129,30,361,130,441,76,130,130},
-//												  {0,0,0,0,0},	  {131,18,369,132,449,76,132,132},{0,0,0,0,0},	  {133,34,377,134,457,50,134}};
 
 
 unsigned char DoWithTiaoJian(unsigned int *rdat)//×ó1ÓÒ0
 {
-	volatile unsigned char a,b,c=0,DoWithCount=1,DoWithvalue=0,revalue=0;
+	volatile unsigned char a,b,c=0,DoWithCount=1,DoWithvalue=0;
 	for (a=1;a<15;a++)
-		for ( b=0;b<9;b++)
-			for (c=0;c<80;c++)
+		for ( b=4;b<LENGTH;b++)
+			for (c=0;c<150;c++)
 				if (x_reserve[a][b]==rdat[c]&&x_reserve[a][b]!=0)
+					{
+					if(b==4&&find(rdata3,x_reserve[a][0])&&find(rdata3,x_reserve[a][2]))
+					{DoWithArray[DoWithCount++]=x_reserve[a][b];
+					DoWithArray[DoWithCount++]=a;}
+					else if(b==8&&find(rdata3,x_reserve[a][1])&&find(rdata3,x_reserve[a][3]))
+					{DoWithArray[DoWithCount++]=x_reserve[a][b];
+					DoWithArray[DoWithCount++]=a;}
+					if (b!=8&&b!=4)
 					{
 					DoWithArray[DoWithCount++]=x_reserve[a][b];
 					DoWithArray[DoWithCount++]=a;
-					if (b==2)revalue=1;
+					}
 					}
 	
 	if (DoWithCount>1)
 	{
 		for (a=1;a<40;a++)
-			if (DoWithArray[a*2]==DoWithArray[a*2+2]&&DoWithArray[a*2]==DoWithArray[a*2+4]&&DoWithArray[a*2]==DoWithArray[a*2+6]&&DoWithArray[a*2]==DoWithArray[a*2+8]&&DoWithArray[a*2]==DoWithArray[a*2+10]
+			if (DoWithArray[a*2]==DoWithArray[a*2+2]&&DoWithArray[a*2]==DoWithArray[a*2+4]&&DoWithArray[a*2]==DoWithArray[a*2+6]&&DoWithArray[a*2]==DoWithArray[a*2+8]&&DoWithArray[a*2]==DoWithArray[a*2+10]&&DoWithArray[a*2]==DoWithArray[a*2+12]
+			&&DoWithS[DoWithvalue-1].what!=DoWithArray[a*2]&&DoWithArray[a*2]!=0)
+			{DoWithS[DoWithvalue].howmany=7;DoWithS[DoWithvalue].what=DoWithArray[a*2];DoWithvalue++;}
+			else if (DoWithArray[a*2]==DoWithArray[a*2+2]&&DoWithArray[a*2]==DoWithArray[a*2+4]&&DoWithArray[a*2]==DoWithArray[a*2+6]&&DoWithArray[a*2]==DoWithArray[a*2+8]&&DoWithArray[a*2]==DoWithArray[a*2+10]
 			&&DoWithS[DoWithvalue-1].what!=DoWithArray[a*2]&&DoWithArray[a*2]!=0)
 			{DoWithS[DoWithvalue].howmany=6;DoWithS[DoWithvalue].what=DoWithArray[a*2];DoWithvalue++;}
 			else if (DoWithArray[a*2]==DoWithArray[a*2+2]&&DoWithArray[a*2]==DoWithArray[a*2+4]&&DoWithArray[a*2]==DoWithArray[a*2+6]&&DoWithArray[a*2]==DoWithArray[a*2+8]
@@ -752,7 +817,6 @@ unsigned char DoWithTiaoJian(unsigned int *rdat)//×ó1ÓÒ0
 				DoWithS[DoWithvalue].howmany=3;
 				DoWithvalue++;
 				}
-			return revalue;
 	}
 }
 int DupliDoWith(int x,int y)
@@ -816,7 +880,15 @@ void rx12(void)
 		else
 		cut((tempNum&0x0fff)+1);
 	}
-}		
+}	
+
+////////////////////////////////////////////////////////////////
+#define TEST   0
+//////////////////////////////////////////
+//                                      //
+//                main                  //
+//                                      //
+//////////////////////////////////////////	
 int main(void)
 { 
 	volatile unsigned int a,b=0,c=0,d=0,e;
@@ -827,10 +899,10 @@ int main(void)
 
 
 	USART0_Init(); 
-/*	L01_CE_LOW( );
+	L01_CE_LOW( );
 	L01_Init();
 	L01_SetTRMode( TX_MODE );
-	L01_WriteHoppingPoint( 0 );*/
+	L01_WriteHoppingPoint( 0 );
 	
 	LED_ON
 	if (EEPROM_read(1)==0xFF)
@@ -844,11 +916,12 @@ int main(void)
   	LED_OFF
 
 //	str_send(luxj);
-	#if TEST==0
-	n=51;
-	while(n<135)
-	{b=send_int(114);
-	_delay_ms(10000);}
+	#if TEST==2
+	while(1)
+	{LED_ON
+		b=send_int(11,13,15);
+		LED_OFF
+	_delay_ms(1000);}
 	#elif TEST==1
 	while(1)
 	{uart_sendB(0xff);}
@@ -887,6 +960,8 @@ UCSR0B |=(1<<RXCIE0);
 	rx12();
 	rx0x12=1;
 	searchF();
+	searchL();
+	
 //	sendcast();
 	}
 	
@@ -894,7 +969,220 @@ UCSR0B |=(1<<RXCIE0);
  }
 	 return 0;
 }
-
+void searchL(void)
+{
+	unsigned int a,b;
+	if (find(rdata3,167)&&(!find(rdata4,167)))
+	{
+		add2Bcast(115,0,121);
+		addto4(167);
+//		uart_sendB(115);
+	}
+	if (find(rdata3,161)&&(!find(rdata4,161)))
+	{
+		add2Bcast(116,0,121);
+		addto4(161);
+//		uart_sendB(116);
+	}
+	if (find(rdata3,163)&&(!find(rdata4,163)))
+	{
+		add2Bcast(117,0,121);
+		addto4(163);
+//		uart_sendB(117);
+	}
+	if (find(rdata3,225)&&(!find(rdata4,225)))
+	{
+		add2Bcast(105,0,122);
+		addto4(225);
+//		uart_sendB(105);
+	}
+	if (find(rdata3,223)&&(!find(rdata4,223)))
+	{
+		add2Bcast(106,0,122);
+		addto4(223);
+//		uart_sendB(106);
+	}
+	if (find(rdata3,215)&&(!find(rdata4,215)))
+	{
+		add2Bcast(107,0,122);
+		addto4(215);
+//		uart_sendB(107);
+	}
+	if (find(rdata3,169)&&(!find(rdata4,169)))//s1jg
+	{
+		a=30;b=0;
+		if (factor[6].howmany==4)
+		{if (factor[6].what==10)
+		b=8;
+		else if(factor[6].what==12)
+		b=9;
+		else if(factor[6].what==14)
+		b=10;
+		else b=factor[6].what;
+		a+=b+50;}
+		if (factor[6].howmany==5)
+		{if (factor[6].what==10)
+		b=8;
+		else if(factor[6].what==12)
+		b=9;
+		else if(factor[6].what==14)
+		b=10;
+		else b=factor[6].what;
+		a+=b+10+50;}
+		if (factor[6].howmany==0)
+		{addto4(169);return;}
+		add2Bcast(101,a,122);
+		addto4(169);
+	//	uart_sendB(101);
+	}
+	if (find(rdata3,171)&&(!find(rdata4,171)))//s2jg
+	{
+		a=30;b=0;
+		if (factor[6].howmany==4)
+		{if (factor[6].what==10)
+		b=8;
+		else if(factor[6].what==12)
+		b=9;
+		else if(factor[6].what==14)
+		b=10;
+		else b=factor[6].what;
+		a+=b+50;}
+		if (factor[6].howmany==5)
+		{if (factor[6].what==10)
+		b=8;
+		else if(factor[6].what==12)
+		b=9;
+		else if(factor[6].what==14)
+		b=10;
+		else b=factor[6].what;
+		a+=b+10+50;}
+		if (factor[6].howmany==0)
+		{addto4(171);return;}
+		add2Bcast(102,a,122);
+		addto4(171);
+	//	uart_sendB(102);
+	}
+	if (find(rdata3,165)&&(!find(rdata4,165)))//s3jg
+	{
+		a=30;b=0;
+		if (factor[6].howmany==4)
+		{if (factor[6].what==10)
+		b=8;
+		else if(factor[6].what==12)
+		b=9;
+		else if(factor[6].what==14)
+		b=10;
+		else b=factor[6].what;
+		a+=b+50;}
+		if (factor[6].howmany==5)
+		{if (factor[6].what==10)
+		b=8;
+		else if(factor[6].what==12)
+		b=9;
+		else if(factor[6].what==14)
+		b=10;
+		else b=factor[6].what;
+		a+=b+10+50;}
+		if (factor[6].howmany==0)
+		{addto4(165);return;}
+		add2Bcast(103,a,122);
+		addto4(165);
+	//	uart_sendB(103);
+	}
+	if (find(rdata3,211)&&(!find(rdata4,211)))//x1jg
+	{
+			a=30;b=0;
+		if (factor[3].howmany==4)
+		{if (factor[3].what==10)
+		b=8;
+		else if(factor[3].what==12)
+		b=9;
+		else if(factor[3].what==14)
+		b=10;
+		else b=factor[3].what;
+		a+=b;}
+		if (factor[3].howmany==5)
+		{if (factor[3].what==10)
+		b=8;
+		else if(factor[3].what==12)
+		b=9;
+		else if(factor[3].what==14)
+		b=10;
+		else b=factor[3].what;
+		a+=b+10;}
+		if (factor[3].howmany==0)
+		{addto4(211);return;}
+		add2Bcast(111,a,121);
+		addto4(211);
+//		uart_sendB(111);
+	}
+	if (find(rdata3,215)&&(!find(rdata4,215)))//x2jg
+	{
+			a=30;b=0;
+		if (factor[3].howmany==4)
+		{if (factor[3].what==10)
+		b=8;
+		else if(factor[3].what==12)
+		b=9;
+		else if(factor[3].what==14)
+		b=10;
+		else b=factor[3].what;
+		a+=b;}
+		if (factor[3].howmany==5)
+		{if (factor[3].what==10)
+		b=8;
+		else if(factor[3].what==12)
+		b=9;
+		else if(factor[3].what==14)
+		b=10;
+		else b=factor[3].what;
+		a+=b+10;}
+		if (factor[3].howmany==0)
+		{addto4(215);return;}
+		add2Bcast(112,a,121);
+		addto4(215);
+	//	uart_sendB(112);
+	}
+	if (find(rdata3,219)&&(!find(rdata4,219)))//x3jg
+	{
+			a=30;b=0;
+		if (factor[3].howmany==4)
+		{if (factor[3].what==10)
+		b=8;
+		else if(factor[3].what==12)
+		b=9;
+		else if(factor[3].what==14)
+		b=10;
+		else b=factor[3].what;
+		a+=b;}
+		if (factor[3].howmany==5)
+		{if (factor[3].what==10)
+		b=8;
+		else if(factor[3].what==12)
+		b=9;
+		else if(factor[3].what==14)
+		b=10;
+		else b=factor[3].what;
+		a+=b+10;}
+		if (factor[3].howmany==0)
+		{addto4(219);return;}
+		add2Bcast(113,a,121);
+		addto4(219);
+//		uart_sendB(113);
+	}
+		if (find(rdata3,7)&&(!find(rdata4,7)))
+	{
+		add2Bcast(114,0,121);
+		addto4(7);
+//		uart_sendB(114);//ÏÂ
+	}
+		if (find(rdata3,41)&&(!find(rdata4,41)))
+	{
+		add2Bcast(104,0,122);
+		addto4(41);
+	//	uart_sendB(104);//ÉÏ
+	}
+}
 int duplicate(int* p)
 {
 	int temp,a,b;
@@ -914,17 +1202,6 @@ int duplicate(int* p)
 	return 0;
 }	
 	
-ISR(TIMER2_OVF_vect)
-{
-	if(Bcast[0]!=0)Bcast[0]=0;
-	volatile unsigned char b=0;
-	b=send_int(Bcast[5]);
-	if(b)
-	for(b=5;b!=0;b--)
-	Bcast[b]=Bcast[b-1];
-}
-//ÓĞ×Ö·ûÊıÁ¿ÏŞÖÆ
-//ÊäÈëÌõ¼şµÄÊ±ºòÈç¹û·¢´í»áÓ°Ïì
 
 
 
