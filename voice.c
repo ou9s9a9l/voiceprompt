@@ -22,14 +22,12 @@ unsigned char *p;//flag
 unsigned char *j=((unsigned char *)0x000800);//Êı¾İ´æ´¢Î»ÖÃ
 #define  LENGTH 11
 const unsigned int x_reserve[15][LENGTH];
-#define NOP() asm("nop")
+
 #define size  350
 #define N  8
 #define DELAY 50
 #define DEVIDE 9
-char luxi[]="¸öÌõ¼şÊÕµ½";
-char luxj[]="ÎŞÊı¾İ";
-//char luxh[]="ĞÂ°²´å";
+
 #ifndef F_CPU
 #define F_CPU 8000000
 #endif
@@ -49,10 +47,10 @@ struct DoWith
 }DoWithS[20],factor[20];
 void send_char(unsigned char *testbuffer);
 unsigned char DoWithTiaoJian(unsigned int *rdat);
+void searchL(void);
+
 BYTEBIT  Cdata1,Cdata2;
-
 #define FORMAT(Addr) SET_BIT8_FORMAT(Addr)
-
 //#ifdef Cdata1
 	#define Cdat1_0   Cdata1.BIT0
 	#define Cdat1_1   Cdata1.BIT1
@@ -63,7 +61,6 @@ BYTEBIT  Cdata1,Cdata2;
 	#define Cdat1_6   Cdata1.BIT6
 	#define Cdat1_7   Cdata1.BIT7
 //#endif
-
 //#ifdef Cdata2
 	#define Cdat2_0   Cdata2.BIT0
 	#define Cdat2_1   Cdata2.BIT1
@@ -77,20 +74,18 @@ BYTEBIT  Cdata1,Cdata2;
 #define LED_OFF  _PA3=1;
 #define LED_ON  _PA3=0;
 #define LED_TWINKEL {LED_ON;_delay_ms(200);LED_OFF}
-int hei[3];
-int k=0,m=0,x=0,y=0,z=0,i=0,h=0; 
+int hei[3]; 
 unsigned int m_freedelay=0;					////kÊÇrdata3ÀïÃæµÄÌõ¼şÊı//x´ú±írdata123µÄµÚ¼¸¸ö //n´ú±íÓëÌõ¼ş Èç¹ûÊÇ1Ôò³ÉÁ¢hÎªÒÑ¾­³ÉÁ¢Ìõ¼şÊı
 volatile unsigned int delay=0,rx0x12=0,rx0x11=0;
 unsigned int m_save,m_crc,m_count;
 volatile char rdata[size]={0};
-char rdata1[size]={1};
-char rdatatemp[size]={0};
+volatile char rdatatemp[size]={0};
 volatile unsigned int DoWithArray[80]={0};
 unsigned int rdata2[11]={115,117,119,121,123,125,127,129,131,133};
 volatile unsigned int rdata3[150]={0};
 unsigned int rdata4[DELAY];
 unsigned char Bcast[6][3];
-void searchL(void);
+
 
 void EEPROM_write(unsigned int uiAddress, unsigned char  ucData)
 {
@@ -125,35 +120,8 @@ void uart_sendB(unsigned char data)
    while ( !( UCSR0A & (1<<UDRE0)) ); 
     UDR0=data;
 }
-void int_send(int s)
-{
-	int a=0;
-	uart_sendB(s);
-	a=s>>8;
-	uart_sendB(a);
-}
-//·¢ËÍ×Ö·û´® usart
-void str_send(char *s)  
-{
-   while(*s)
-   {
-      uart_sendB(*s); 
-      s++;
-   }
-   s++;
-   if(0==*s)
-   uart_sendB(0);
-}
-
 //ÑÓ³Ù
-void Delayms(unsigned int MS)		  
-{
-     unsigned char n=0;
-	 while(MS>0)
-	 {
-	 for (n=1;n<187;n++){NOP();}MS--;
-	 }	
-}
+
 //¶¨Ê±Æ÷³õÊ¼»¯
 
 //´®¿Ú³õÊ¼»¯
@@ -272,20 +240,20 @@ while(pthis!=NULL)
 		rdata4[c]=0;
 	}
 
-	for(c=DELAY-9;c<DELAY;c++)
+/*	for(c=DELAY-9;c<DELAY;c++)
 	{
 	if(Num==rdata4[c])
 		for(;c<DELAY-1;c++)////////////////////////////////
 		rdata4[c]=rdata4[c+1];
-	}
+	}*/
 
 }
 unsigned char find(unsigned int *rdat,unsigned int source)
 {
 	unsigned char b=0,temp;
 	temp=Quest_len_int(rdat);
-	if (rdat[41]!=0&&0==temp)
-	temp=49;
+	if (rdat[DELAY-9]!=0&&0==temp)
+	temp=DELAY-1;
 	for (unsigned char a=0;a<=temp;a++)
 	{if(rdat[a]==source)return 1;}
 		
@@ -301,7 +269,8 @@ void add(unsigned char Data2,unsigned char Data1,volatile unsigned int Ident)
 	dat=Ident*8-31;
 	if(Cdat1_7>Cdat2_7)
 	{rdata3[Quest_len_int(rdata3)]=dat+0;
-	if(find(rdata2,(dat+0))&&(!find(rdata4,(dat+0))))addto4_last(dat+0);}
+	//if(find(rdata2,(dat+0))&&(!find(rdata4,(dat+0))))addto4_last(dat+0);
+	}
 
 	if(Cdat1_6>Cdat2_6)
 	{rdata3[Quest_len_int(rdata3)]=dat+1;
@@ -309,7 +278,8 @@ void add(unsigned char Data2,unsigned char Data1,volatile unsigned int Ident)
 
 	if(Cdat1_5>Cdat2_5)
 	{rdata3[Quest_len_int(rdata3)]=dat+2;
-	if(find(rdata2,(dat+2))&&(!find(rdata4,(dat+2))))addto4_last(dat+2);}
+	//if(find(rdata2,(dat+2))&&(!find(rdata4,(dat+2))))addto4_last(dat+2);
+	}
 
 	if(Cdat1_4>Cdat2_4)
 	{rdata3[Quest_len_int(rdata3)]=dat+3;
@@ -317,7 +287,8 @@ void add(unsigned char Data2,unsigned char Data1,volatile unsigned int Ident)
 
 	if(Cdat1_3>Cdat2_3)
 	{rdata3[Quest_len_int(rdata3)]=dat+4;
-	if(find(rdata2,(dat+4))&&(!find(rdata4,(dat+4))))addto4_last(dat+4);}
+	//if(find(rdata2,(dat+4))&&(!find(rdata4,(dat+4))))addto4_last(dat+4);
+	}
 
 	if(Cdat1_2>Cdat2_2)
 	{rdata3[Quest_len_int(rdata3)]=dat+5;
@@ -325,7 +296,8 @@ void add(unsigned char Data2,unsigned char Data1,volatile unsigned int Ident)
 
 	if(Cdat1_1>Cdat2_1)
 	{rdata3[Quest_len_int(rdata3)]=dat+6;
-	if(find(rdata2,(dat+6))&&(!find(rdata4,(dat+6))))addto4_last(dat+6);}
+	//if(find(rdata2,(dat+6))&&(!find(rdata4,(dat+6))))addto4_last(dat+6);
+	}
 
 	if(Cdat1_0>Cdat2_0)
 	{rdata3[Quest_len_int(rdata3)]=dat+7;
@@ -350,13 +322,7 @@ void addto4(unsigned int Num)
 	rdata4[b]=rdata4[b+1];
 	rdata4[DELAY-11]=Num;
 }
-void addto4_last(unsigned int Num)
-{
-	volatile  char b;
-	b=DELAY-9;
-	while(rdata4[b]!=0)b++;
-	rdata4[b]=Num;
-}
+
 void Judge(void)//´«ÈëÒ»¸ö½ÓÊÕµ½µÄrxdataÊı×é Õâ¸öÊı×éÒÀ´ÎºÍÇ°Ò»¸ö±È½Ï½á¹û´æµ½ÀàËÆ   05 51  ÕâÑùµÄ½á¹ûÖĞµÚÎåÎ»Îª51
 {
 	int b=0,a=0;
@@ -366,6 +332,7 @@ void Judge(void)//´«ÈëÒ»¸ö½ÓÊÕµ½µÄrxdataÊı×é Õâ¸öÊı×éÒÀ´ÎºÍÇ°Ò»¸ö±È½Ï½á¹û´æµ½ÀàË
 		{
 			rdata4[b]=0;
 		}
+		rdata4[41]=133;
 		for (a=4;a<33;a++)
 		{
 		add(0,rdata[a],a);                             //´¦Àí³ÌĞò  
@@ -375,7 +342,6 @@ void Judge(void)//´«ÈëÒ»¸ö½ÓÊÕµ½µÄrxdataÊı×é Õâ¸öÊı×éÒÀ´ÎºÍÇ°Ò»¸ö±È½Ï½á¹û´æµ½ÀàË
 			add(0,rdata[a],a);                             //´¦Àí³ÌĞò
 		}
 
-	y++;
 }
 
 
@@ -403,7 +369,7 @@ void searchF(void)
 
 
 	
-	volatile unsigned int a=0,b=0,c=0,d=1,e,n=0,count=0,temp,tempa=0,tempb=0,tempc=0;//fÊÇÌõ¼şºó¼¸¸ö²»·¢
+	volatile unsigned int a=0,b=0,c=0,d=1,e,n=0,o_count=0,temp,tempa=0,tempb=0,tempc=0;//fÊÇÌõ¼şºó¼¸¸ö²»·¢
 //	if(1==m)return;
 //	if(1==i){i=0;return;}
 
@@ -414,13 +380,13 @@ void searchF(void)
 	}
 	for (a=0;a<80;a++)
 	DoWithArray[a]=0;
-	for (a=0;a<8;a++)
+	for (a=0;a<20;a++)
 	{DoWithS[a].howmany=0;DoWithS[a].what=0;}
 	DoWithTiaoJian(rdata3);
 while(pthis!=NULL)
 	{
 	
-		if(DEVIDE<count)break;//Ç°45¸öÌõ¼ş
+		if(DEVIDE<o_count)break;//Ç°45¸öÌõ¼ş
 		n=1;
 		b=0;
 		for(a=0;a<150;a++)//ÑÓ³Ù80Ãë
@@ -452,20 +418,21 @@ while(pthis!=NULL)
 			for (a=0;a<8;a++)
 			{
 			d=0;
-			if(factor[count].what)
+			if(factor[o_count].what)
 				{d=1;}//¹ìµÀ±ß
 			if (tempb>0&&0==d)
 			{
-				factor[count].howmany=tempb;
-				factor[count].what=tempc;
+				factor[o_count].howmany=tempb;
+				factor[o_count].what=tempc;
 			}
 			if(DoWithS[a].what!=0)
 			for (c=0;c<20;c++)
 				if(DoWithS[a].what==factor[c].what)
-					if(DoWithS[a].howmany<=factor[c].howmany)d=1;//¹ìµÀÖĞ
+					if(DoWithS[a].howmany<=factor[c].howmany
+					||(5==factor[c].howmany&&7==DoWithS[a].howmany))d=1;//¹ìµÀÖĞ±¨Íê5±¨7
 				if(d==0&&DoWithS[a].howmany!=0)
  				{
-				if (count==0||count==6)temp=0;
+				if (o_count==0||o_count==8)temp=0;
 				else temp=1;
 				if (1==temp&&DoWithS[a].howmany!=6&&find(rdata3,x_reserve[DoWithS[a].what][0])&&find(rdata3,x_reserve[DoWithS[a].what][2]))
 				{
@@ -474,15 +441,15 @@ while(pthis!=NULL)
 						tempc=DoWithS[a].what;
 						uart_sendB(DoWithS[a].howmany);
 						uart_sendB(DoWithS[a].what);
-						uart_sendB(count+1);
+						uart_sendB(o_count+1);
 						uart_sendB(temp);
 						
 						if (DoWithS[a].howmany==3||DoWithS[a].howmany==7)
-						tempa+=0;
+						tempa+=50;
 						else if(DoWithS[a].howmany==4)
 						tempa+=10;
 						else if(DoWithS[a].howmany==5)
-						tempa+=20;
+						tempa+=70;
 						if (DoWithS[a].what<8)
 						{
 							tempa+=DoWithS[a].what;
@@ -493,30 +460,34 @@ while(pthis!=NULL)
 						tempa+=9;
 						else if(DoWithS[a].what==14)
 						tempa+=10;
-						tempa+=50;
-						add2Bcast(tempa,0,122);
+						//tempa+=50;
+						if(DoWithS[a].howmany==4)
+						add2Bcast(tempa,0,131);//131Å®
+						else
+						add2Bcast(tempa,0,132);//131Å®
 						uart_sendB(tempa);
 						uart_sendB(0xFF);
-						factor[count]=DoWithS[a];
+						factor[o_count]=DoWithS[a];
 							for (e=0;e<15;e++)
 							{
-								if(factor[e].what==factor[count].what)
-								factor[e].howmany=factor[count].howmany;
+								if(factor[e].what==factor[o_count].what)
+								factor[e].howmany=factor[o_count].howmany;
 							}
 				}
 				if (0==temp&&DoWithS[a].howmany!=6&&find(rdata3,x_reserve[DoWithS[a].what][1])&&find(rdata3,x_reserve[DoWithS[a].what][3]))
 				{
-					
+				//		4 1 1	5 1 0	3 1 0
+				//		4 2 0	5 2 1	3 2 1
 						tempb=DoWithS[a].howmany;
 						tempc=DoWithS[a].what;
 					uart_sendB(DoWithS[a].howmany);
 					uart_sendB(DoWithS[a].what);
-					uart_sendB(count+1);
+					uart_sendB(o_count+1);
 					uart_sendB(temp);
 						if (DoWithS[a].howmany==3||DoWithS[a].howmany==7)
 						tempa+=0;
 						else if(DoWithS[a].howmany==4)
-						tempa+=10;
+						tempa+=60;
 						else if(DoWithS[a].howmany==5)
 						tempa+=20;
 						if (DoWithS[a].what<8)
@@ -529,28 +500,29 @@ while(pthis!=NULL)
 						tempa+=9;
 						else if(DoWithS[a].what==14)
 						tempa+=10;
-						tempa+=50;
-						add2Bcast(tempa,0,122);
+						if(DoWithS[a].howmany==4)
+						add2Bcast(tempa,0,132);//¸Ä³É131
+						else add2Bcast(tempa,0,131);
 						uart_sendB(tempa);
 						uart_sendB(0xFF);
-					factor[count]=DoWithS[a];
+					factor[o_count]=DoWithS[a];
 					for (e=0;e<15;e++)
 					{
-						if(factor[e].what==factor[count].what)
-						factor[e].howmany=factor[count].howmany;
+						if(factor[e].what==factor[o_count].what)
+						factor[e].howmany=factor[o_count].howmany;
 					}
 				}
 
 				}	
 			}						
 		}
-	if (factor[count].howmany==6)
+	if (factor[o_count].howmany==6)
 	{
-		factor[count].howmany=0;
-		factor[count].what=0;
+		factor[o_count].howmany=0;
+		factor[o_count].what=0;
 	}
 	pthis=pthis->next;
-	count++;
+	o_count++;
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -645,7 +617,7 @@ void sendcast(void)
 {
 	if(Bcast[0][0]!=0)qingling(Bcast[0],3);
 	m_count++;m_freedelay++;
-	if(m_count<7)return;
+	if(m_count<11)return;
 	if (m_freedelay>200)
 		{
 			add2Bcast(0,0,122);//Õı¶¨ 3·ÖÖÓÒ»´Î
@@ -663,7 +635,8 @@ void sendcast(void)
 		Bcast[b][0]=Bcast[b-1][0];
 		Bcast[b][1]=Bcast[b-1][1];
 		Bcast[b][2]=Bcast[b-1][2];
-	}		
+	}
+	else hei[1]=b;		
 	m_count=0;
 	_delay_ms(100);
 	LED_OFF
@@ -704,40 +677,49 @@ ISR(USART0_RX_vect)
 	 }
 	 if(1==count&&(temp==0x11||temp==0x12))
 	 LED_ON
-
+	if (count>(size-10))
+	{
+	for (a=0;a<size;a++)
+	rdatatemp[a]=0;
+	succflag=0;
+	count=0;
+	}
+/*if (count>340)
+{
+	hei[1]=count;
+}*/
 	if(succflag)
 	{
 	 rdatatemp[count]=temp;
 	
 	
 	 if (rdatatemp[count]==0x03)
-	 {	
-		 
+	 {
 		  m_save=CRC(rdatatemp,count-2);
 		  m_crc=rdatatemp[count-2];
 		  m_crc<<=8;
 		  m_crc|=rdatatemp[count-1];
 		  if(m_save!=m_crc||m_crc==0)
 		  {
-			 m=1; 
+			
 			  for (a=0;a<size;a++)
 			  rdatatemp[a]=0;
 			  hei[0]=m_crc;
 		  }
-		  else m=0;
 		 for (int a=0;a<size;a++)
 		 {
 			 rdata[a]=rdatatemp[a];
 		 }
-		  for (a=0;a<size;a++)
-			  rdatatemp[a]=0;
+	 if(rdatatemp[1]==0x12)
+	 rx0x12=0;
+	  if(rdatatemp[1]==0x11)
+	 rx0x11=0;	 
 	 count=-1;
 	 succflag=0;
 	 LED_OFF
-	  if(rdata[1]==0x12)
-	 rx0x12=0;
-	  if(rdata[1]==0x11)
-	 rx0x11=0;
+	 
+	  for (a=0;a<size;a++)
+	rdatatemp[a]=0;
 	 }
 	  if (rxflag==1)      				          //×ªÒë±êÖ¾
 	 switch(rdatatemp[count])
@@ -855,9 +837,9 @@ void rx12(void)
 				{
 					hei[0]=(tempNum&0x0fff)+1;
 					rdata3[Quest_len_int(rdata3)]=(tempNum&0x0fff)+1;
-					if((((tempNum&0x0fff)+1)%2)==0)addto4((tempNum&0x0fff)+1);
-					else if(find(rdata2,(tempNum&0x0fff)+1))
-						addto4_last((tempNum&0x0fff)+1);//²»¿ÉÄÜÔÚÒ»·ÖÖÓÄÚÕâ¸öÏûÊ§µÄ£¬ËùÒÔ²»ÓÃÅĞ¶ÏÊÇ·ñÔÚrdata4ÓĞ
+				//	if((((tempNum&0x0fff)+1)%2)==0)addto4((tempNum&0x0fff)+1);
+				//	 if(find(rdata2,(tempNum&0x0fff)+1))
+				//		addto4_last((tempNum&0x0fff)+1);//²»¿ÉÄÜÔÚÒ»·ÖÖÓÄÚÕâ¸öÏûÊ§µÄ£¬ËùÒÔ²»ÓÃÅĞ¶ÏÊÇ·ñÔÚrdata4ÓĞ
 				//	else if(((tempNum&0x0fff)+1)>230)addto4((tempNum&0x0fff)+1);
 				}
 			}
@@ -865,20 +847,23 @@ void rx12(void)
 				cut((tempNum&0x0fff)+1);                          //´¦Àí³ÌĞò
 			}
 		else if((tempNum&0x0fff)>888&&(tempNum&0x0fff)<1020)
-				if (tempNum&0x8000)
-				{for (b=0;b<80;b++)
 				{
-				if(((tempNum&0x0fff)+1)==rdata3[b])
-				c=1;
+					if (tempNum&0x8000)
+					{
+						for (b=0;b<150;b++)
+						{
+						if(((tempNum&0x0fff)+1)==rdata3[b])
+						c=1;
+						}
+						if (c==0)
+						{
+							hei[0]=(tempNum&0x0fff)+1;
+							rdata3[Quest_len_int(rdata3)]=(tempNum&0x0fff)+1;
+						}
+					}
+					else
+					cut((tempNum&0x0fff)+1);
 				}
-				if (c==0)
-				{
-					hei[0]=(tempNum&0x0fff)+1;
-					rdata3[Quest_len_int(rdata3)]=(tempNum&0x0fff)+1;
-				}
-		}
-		else
-		cut((tempNum&0x0fff)+1);
 	}
 }	
 
@@ -893,11 +878,12 @@ int main(void)
 { 
 	volatile unsigned int a,b=0,c=0,d=0,e;
 	volatile unsigned char temp;
+	Init_MCU( );
 	Init_SPI( );
 	Timer_Init();
-	Init_MCU( );
+	
 
-
+	EEPROM_write(0xcd,0x2e);
 	USART0_Init(); 
 	L01_CE_LOW( );
 	L01_Init();
@@ -942,15 +928,20 @@ int main(void)
 	LED_TWINKEL//init complete
 	}
 UCSR0B |=(1<<RXCIE0);
-
+hei[1]=head;
      while(1)
  {
 	/*if (factor[1].what!=2)
 	{
 		factor[1].what=2;
 	}*/
+	if (hei[1]!=head)
+	{
+		head=hei[1];
+	}
 	if (rdata[1]==0x11&&rx0x11==0)
 	{
+
 			Judge();
 			rx0x11=1;
 	}
@@ -974,118 +965,118 @@ void searchL(void)
 	unsigned int a,b;
 	if (find(rdata3,167)&&(!find(rdata4,167)))
 	{
-		add2Bcast(115,0,121);
+		add2Bcast(105,0,131);
 		addto4(167);
 //		uart_sendB(115);
 	}
 	if (find(rdata3,161)&&(!find(rdata4,161)))
 	{
-		add2Bcast(116,0,121);
+		add2Bcast(106,0,131);
 		addto4(161);
 //		uart_sendB(116);
 	}
 	if (find(rdata3,163)&&(!find(rdata4,163)))
 	{
-		add2Bcast(117,0,121);
+		add2Bcast(107,0,131);
 		addto4(163);
 //		uart_sendB(117);
 	}
 	if (find(rdata3,225)&&(!find(rdata4,225)))
 	{
-		add2Bcast(105,0,122);
+		add2Bcast(115,0,132);
 		addto4(225);
 //		uart_sendB(105);
 	}
-	if (find(rdata3,223)&&(!find(rdata4,223)))
+	if (find(rdata3,221)&&(!find(rdata4,221)))
 	{
-		add2Bcast(106,0,122);
-		addto4(223);
+		add2Bcast(116,0,132);
+		addto4(221);
 //		uart_sendB(106);
 	}
-	if (find(rdata3,215)&&(!find(rdata4,215)))
+	if (find(rdata3,213)&&(!find(rdata4,213)))
 	{
-		add2Bcast(107,0,122);
-		addto4(215);
+		add2Bcast(117,0,132);
+		addto4(213);
 //		uart_sendB(107);
 	}
 	if (find(rdata3,169)&&(!find(rdata4,169)))//s1jg
 	{
 		a=30;b=0;
-		if (factor[6].howmany==4)
-		{if (factor[6].what==10)
+		if (factor[8].howmany==4)
+		{if (factor[8].what==10)
 		b=8;
-		else if(factor[6].what==12)
+		else if(factor[8].what==12)
 		b=9;
-		else if(factor[6].what==14)
+		else if(factor[8].what==14)
 		b=10;
-		else b=factor[6].what;
+		else b=factor[8].what;
 		a+=b+50;}
-		if (factor[6].howmany==5)
-		{if (factor[6].what==10)
+		if (factor[8].howmany==5)
+		{if (factor[8].what==10)
 		b=8;
-		else if(factor[6].what==12)
+		else if(factor[8].what==12)
 		b=9;
-		else if(factor[6].what==14)
+		else if(factor[8].what==14)
 		b=10;
-		else b=factor[6].what;
+		else b=factor[8].what;
 		a+=b+10+50;}
-		if (factor[6].howmany==0)
+		if (factor[8].howmany==0)
 		{addto4(169);return;}
-		add2Bcast(101,a,122);
+		add2Bcast(111,a,132);
 		addto4(169);
 	//	uart_sendB(101);
 	}
 	if (find(rdata3,171)&&(!find(rdata4,171)))//s2jg
 	{
 		a=30;b=0;
-		if (factor[6].howmany==4)
-		{if (factor[6].what==10)
+		if (factor[8].howmany==4)
+		{if (factor[8].what==10)
 		b=8;
-		else if(factor[6].what==12)
+		else if(factor[8].what==12)
 		b=9;
-		else if(factor[6].what==14)
+		else if(factor[8].what==14)
 		b=10;
-		else b=factor[6].what;
+		else b=factor[8].what;
 		a+=b+50;}
-		if (factor[6].howmany==5)
-		{if (factor[6].what==10)
+		if (factor[8].howmany==5)
+		{if (factor[8].what==10)
 		b=8;
-		else if(factor[6].what==12)
+		else if(factor[8].what==12)
 		b=9;
-		else if(factor[6].what==14)
+		else if(factor[8].what==14)
 		b=10;
-		else b=factor[6].what;
+		else b=factor[8].what;
 		a+=b+10+50;}
-		if (factor[6].howmany==0)
+		if (factor[8].howmany==0)
 		{addto4(171);return;}
-		add2Bcast(102,a,122);
+		add2Bcast(112,a,132);
 		addto4(171);
 	//	uart_sendB(102);
 	}
 	if (find(rdata3,165)&&(!find(rdata4,165)))//s3jg
 	{
 		a=30;b=0;
-		if (factor[6].howmany==4)
-		{if (factor[6].what==10)
+		if (factor[8].howmany==4)
+		{if (factor[8].what==10)
 		b=8;
-		else if(factor[6].what==12)
+		else if(factor[8].what==12)
 		b=9;
-		else if(factor[6].what==14)
+		else if(factor[8].what==14)
 		b=10;
-		else b=factor[6].what;
+		else b=factor[8].what;
 		a+=b+50;}
-		if (factor[6].howmany==5)
-		{if (factor[6].what==10)
+		if (factor[8].howmany==5)
+		{if (factor[8].what==10)
 		b=8;
-		else if(factor[6].what==12)
+		else if(factor[8].what==12)
 		b=9;
-		else if(factor[6].what==14)
+		else if(factor[8].what==14)
 		b=10;
-		else b=factor[6].what;
+		else b=factor[8].what;
 		a+=b+10+50;}
-		if (factor[6].howmany==0)
+		if (factor[8].howmany==0)
 		{addto4(165);return;}
-		add2Bcast(103,a,122);
+		add2Bcast(113,a,132);
 		addto4(165);
 	//	uart_sendB(103);
 	}
@@ -1112,7 +1103,7 @@ void searchL(void)
 		a+=b+10;}
 		if (factor[3].howmany==0)
 		{addto4(211);return;}
-		add2Bcast(111,a,121);
+		add2Bcast(101,a,131);
 		addto4(211);
 //		uart_sendB(111);
 	}
@@ -1139,7 +1130,7 @@ void searchL(void)
 		a+=b+10;}
 		if (factor[3].howmany==0)
 		{addto4(215);return;}
-		add2Bcast(112,a,121);
+		add2Bcast(102,a,131);
 		addto4(215);
 	//	uart_sendB(112);
 	}
@@ -1166,21 +1157,63 @@ void searchL(void)
 		a+=b+10;}
 		if (factor[3].howmany==0)
 		{addto4(219);return;}
-		add2Bcast(113,a,121);
+		add2Bcast(103,a,131);
 		addto4(219);
 //		uart_sendB(113);
 	}
-		if (find(rdata3,7)&&(!find(rdata4,7)))
+		if (find(rdata3,7)&&(!find(rdata4,7))&&find(rdata3,971))
 	{
-		add2Bcast(114,0,121);
+		add2Bcast(104,0,131);
 		addto4(7);
 //		uart_sendB(114);//ÏÂ
 	}
 		if (find(rdata3,41)&&(!find(rdata4,41)))
 	{
-		add2Bcast(104,0,122);
+		add2Bcast(114,0,132);
 		addto4(41);
 	//	uart_sendB(104);//ÉÏ
+	}
+	if (find(rdata3,179)&&(!find(rdata4,179)))//n1jg 379bg
+	{
+		add2Bcast(121,0,131);
+		addto4(179);
+		//		uart_sendB(105);
+	}
+	if (find(rdata3,191)&&(!find(rdata4,191)))//n2jg 393bg
+	{
+		add2Bcast(122,0,131);
+		addto4(191);
+		//		uart_sendB(105);
+	}
+	if (find(rdata3,199)&&(!find(rdata4,199)))//n3jg  407bg
+	{
+		add2Bcast(123,0,131);
+		addto4(199);
+		//		uart_sendB(105);
+	}
+	if (find(rdata3,87)&&(!find(rdata4,87)))//njinzhan
+	{
+		add2Bcast(124,0,131);
+		addto4(87);
+		//		uart_sendB(105);
+	}
+	if (find(rdata3,189)&&(!find(rdata4,189)))//n1lq 412
+	{
+		add2Bcast(125,0,132);
+		addto4(189);
+		//		uart_sendB(105);
+	}
+	if (find(rdata3,185)&&(!find(rdata4,185)))//n2lq 398
+	{
+		add2Bcast(126,0,132);
+		addto4(185);
+		//		uart_sendB(105);
+	}
+	if (find(rdata3,177)&&(!find(rdata4,177)))//n3lq 384
+	{
+		add2Bcast(127,0,132);
+		addto4(177);
+		//		uart_sendB(105);
 	}
 }
 int duplicate(int* p)
